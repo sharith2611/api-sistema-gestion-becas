@@ -1,3 +1,4 @@
+
 from app.core.database import Database
 from app.models.usuario import Usuario
 from fastapi import APIRouter, HTTPException
@@ -55,19 +56,18 @@ class UsuarioRepository:
 
             query = """
                 INSERT INTO usuario
-                (id_usuario, nombre, cedula, telefono, nivel,estado)
-                VALUES (%s, %s, %s, %s, %s,%s)
+                (codigo_usuario, nombre, cedula, id_rol, estado,clave)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id_usuario;
             """
 
             cursor.execute(
                 query,
                 (
-                    usuario.id_usuario,
+                    usuario.codigo_usuario,
                     usuario.nombre,
                     usuario.cedula,
-                    usuario.telefono,
-                    usuario.nivel,
+                    usuario.id_rol,
                     usuario.estado
                 )
             )
@@ -110,11 +110,12 @@ class UsuarioRepository:
 
             query = """
                 UPDATE usuario
-                SET nombre = %s,
+                SET codigo_usuario = %s,
+                    nombre = %s,
                     cedula = %s,
-                    telefono = %s,
-                    nivel = %s,
-                    estado= %s
+                    id_rol = %s,
+                    estado = %s,
+                    clave = %s
                 WHERE id_usuario = %s
                 RETURNING id_usuario;
             """
@@ -122,10 +123,12 @@ class UsuarioRepository:
             cursor.execute(
                 query,
                 (
+                    usuario.codigo_usuario,
                     usuario.nombre,
                     usuario.cedula,
-                    usuario.telefono,
-                    usuario.nivel,
+                    usuario.id_rol,
+                    usuario.estado,
+                    usuario.clave,
                     usuario_id
                 )
             )

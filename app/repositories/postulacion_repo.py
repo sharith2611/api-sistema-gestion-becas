@@ -26,7 +26,7 @@ class PostulacionRepository:
         try:
             conn = self.db.get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM postulacion WHERE id_postulacion = %s;", (sensor_id,))
+            cursor.execute("SELECT * FROM postulacion WHERE id_postulacion = %s;", (id_postulacion,))
             registro = cursor.fetchone()
             conn.close()
             return registro
@@ -39,10 +39,10 @@ class PostulacionRepository:
             conn = self.db.get_connection()
             cursor = conn.cursor()
             query = """
-                INSERT INTO postulacion (id_postulacion, id_estudiante, id_convocatoria, fecha_postulacion, observacion,estado)
-                VALUES (%s, %s, %s, %s, %s,%s) RETURNING id_postulacion;
+                INSERT INTO postulacion ( id_estudiante, id_convocatoria, fecha_postulacion, observaciones,estado)
+                VALUES ( %s, %s, %s, %s,%s) RETURNING id_postulacion;
             """
-            cursor.execute(query, (postulacion.id_postulacion, postulacion.id_estudiante,postulacion.id_convocatoria, postulacion.fecha_postulacion, postulacion.observaciones,postulacion.estado, ))
+            cursor.execute(query, ( postulacion.id_estudiante,postulacion.id_convocatoria, postulacion.fecha_postulacion, postulacion.observaciones,postulacion.estado, ))
             nuevo_id = cursor.fetchone()['id_postulacion']
             conn.commit()
             conn.close()
@@ -66,21 +66,42 @@ class PostulacionRepository:
                     print(f"Error de conexión a la BD: {e}")
                     return None
                 
+   
     def actualizar(self, id_postulacion: int, postulacion: Postulacion):
         try:  
             conn = self.db.get_connection()
             cursor = conn.cursor()
+
             query = """
-                UPDATE postulacion
-                SET id_estudiante = %s, id_convocatoria = %s, facha_postulacion = %s, estado = %s, observacion = %s, adjuntos=%s,estado=%s
-                WHERE id_postulacion = %s
-                RETURNING id_postulacion;
+            UPDATE postulacion
+            SET id_estudiante = %s,
+                id_convocatoria = %s,
+                fecha_postulacion = %s,
+                estado = %s,
+                observaciones = %s,
+                adjuntos = %s,
+                escala = %s
+            WHERE id_postulacion = %s
+            RETURNING id_postulacion;
             """
-            cursor.execute(query, (postulacion.id_estudiante, postulacion.id_convocatoria, postulacion.fecha_postulacion, postulacion.estado, postulacion.observaciones, postulacion.adjuntos,postulacion.estado,postulacion.id_postulacion))
+
+            cursor.execute(query, (
+                postulacion.id_estudiante,
+                postulacion.id_convocatoria,
+                postulacion.fecha_postulacion,
+                postulacion.estado,
+                postulacion.observaciones,
+                postulacion.adjuntos,
+                postulacion.escala,
+                id_postulacion
+            ))
+
             actualizado = cursor.fetchone()
             conn.commit()
             conn.close()
+
             return actualizado is not None
+
         except Exception as e:
-                    print(f"Error de conexión a la BD: {e}")
-                    return None
+            print(f"Error de conexión a la BD: {e}")
+            return None

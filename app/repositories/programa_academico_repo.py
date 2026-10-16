@@ -70,14 +70,13 @@ class ProgramaAcademicoRepository:
 
             query = """
             INSERT INTO programa_academico
-            (id_facultad,codigo,nombre,nivel,modalidad,estado)
-            VALUES (%s,%s,%s,%s,%s,%s)
+            (id_facultad,nombre,nivel,modalidad,estado)
+            VALUES (%s,%s,%s,%s,%s)
             RETURNING id_programa;
             """
 
             cursor.execute(query, (
                 programa.id_facultad,
-                programa.codigo,
                 programa.nombre,
                 programa.nivel,
                 programa.modalidad,
@@ -106,7 +105,6 @@ class ProgramaAcademicoRepository:
                 query = """
                     UPDATE programa_academico
                     SET id_facultad = %s,
-                        codigo = %s,
                         nombre = %s,
                         nivel = %s,
                         modalidad=%s,
@@ -118,7 +116,6 @@ class ProgramaAcademicoRepository:
     
                 cursor.execute(query, (
                     programa.id_facultad,
-                    programa.codigo,
                     programa.nombre,
                     programa.nivel,
                     programa.modalidad,

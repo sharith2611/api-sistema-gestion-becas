@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.api import (
     rutas_adjudicacion,
     rutas_auxilio_educativo,
@@ -20,6 +21,19 @@ app = FastAPI(
     title="API Sistema de auxilio Educativo",
     description="Backend modular con FastAPI y PostgreSQL (Neon) para Sistema Auxilio Educativo",
     version="1.0.0"
+)
+
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Conectamos cada modulo de rutas a la aplicacion principal

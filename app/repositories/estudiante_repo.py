@@ -1,7 +1,6 @@
+
 from app.core.database import Database
 from app.models.estudiante import Estudiante
-from fastapi import APIRouter, HTTPException
-
 
 
 class EstudianteRepository:
@@ -10,74 +9,141 @@ class EstudianteRepository:
         self.db = Database()
 
     def obtener_todos(self):
+        conn = None
+
         try:
             conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
             cursor = conn.cursor()
 
-            cursor.execute(
-                "SELECT * FROM estudiante ORDER BY id_estudiante ASC;"
-            )
+            cursor.execute("""
+                SELECT *
+                FROM estudiante
+                ORDER BY id_estudiante ASC;
+            """)
 
-            registros = cursor.fetchall()
+            return cursor.fetchall()
 
-            conn.close()
-
-            return registros
         except Exception as e:
-                    print(f"Error de conexión a la BD: {e}")
-                    return None
+            print(f"Error al obtener estudiantes: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()
 
     def obtener_por_id(self, id_estudiante: int):
+        conn = None
+
         try:
             conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
             cursor = conn.cursor()
 
-            cursor.execute(
-                "SELECT * FROM estudiante WHERE id_estudiante=%s;",
-                (id_estudiante,)
-            )
+            cursor.execute("""
+                SELECT *
+                FROM estudiante
+                WHERE id_estudiante = %s;
+            """, (id_estudiante,))
 
-            registro = cursor.fetchone()
+            return cursor.fetchone()
 
-            conn.close()
-
-            return registro
         except Exception as e:
-                    print(f"Error de conexión a la BD: {e}")
-                    return None
+            print(f"Error al obtener estudiante por ID: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()
+
+    def obtener_por_documento(self, documento: str):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT *
+                FROM estudiante
+                WHERE documento = %s
+                  AND estado = TRUE
+                LIMIT 1;
+            """, (documento,))
+
+            return cursor.fetchone()
+
+        except Exception as e:
+            print(f"Error al obtener estudiante por documento: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()
 
     def obtener_por_programa(self, id_programa: int):
+        conn = None
+
         try:
             conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
             cursor = conn.cursor()
 
-            cursor.execute(
-                "SELECT * FROM estudiante WHERE id_programa=%s;",
-                (id_programa,)
-            )
+            cursor.execute("""
+                SELECT *
+                FROM estudiante
+                WHERE id_programa = %s
+                ORDER BY id_estudiante ASC;
+            """, (id_programa,))
 
-            registros = cursor.fetchall()
+            return cursor.fetchall()
 
-            conn.close()
-
-            return registros
         except Exception as e:
-                    print(f"Error de conexión a la BD: {e}")
-                    return None
+            print(f"Error al obtener estudiantes por programa: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()
 
     def crear(self, estudiante: Estudiante):
+        conn = None
+
         try:
             conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
             cursor = conn.cursor()
 
-            query = """
-            INSERT INTO estudiante
-            (id_programa,documento,nombres,apellidos,email,telefono,fecha_ingreso,estado)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-            RETURNING id_estudiante;
-            """
-
-            cursor.execute(query, (
+            cursor.execute("""
+                INSERT INTO estudiante (
+                    id_programa,
+                    documento,
+                    nombres,
+                    apellidos,
+                    email,
+                    telefono,
+                    fecha_ingreso,
+                    estado
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id_estudiante;
+            """, (
                 estudiante.id_programa,
                 estudiante.documento,
                 estudiante.nombres,
@@ -88,12 +154,20 @@ class EstudianteRepository:
                 estudiante.estado
             ))
 
-            nuevo_id = cursor.fetchone()["id_estudiante"]
+            resultado = cursor.fetchone()
+            nuevo_id = resultado["id_estudiante"]
 
             conn.commit()
-            conn.close()
 
             return nuevo_id
+
         except Exception as e:
-                    print(f"Error de conexión a la BD: {e}")
-                    return None
+            if conn is not None:
+                conn.rollback()
+
+            print(f"Error al crear estudiante: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()

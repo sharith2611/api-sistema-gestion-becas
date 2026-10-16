@@ -4,8 +4,9 @@ from typing import Optional
 
 class Usuario(BaseModel):
     id_usuario: Optional[int] = None
+    codigo_usuario: str
     nombre: str
     cedula: str
-    telefono: Optional[str] = None
-    nivel: str
-    estado: Optional[bool] = True 
+    id_rol: int
+    estado: bool = True
+    clave: str

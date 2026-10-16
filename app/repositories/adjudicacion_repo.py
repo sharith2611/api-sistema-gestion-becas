@@ -75,7 +75,7 @@ class AdjudicacionRepository:
                     estado
                     
                 )
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s,%s)
                 RETURNING id_adjudicacion;
             """
 

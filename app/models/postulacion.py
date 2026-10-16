@@ -7,7 +7,7 @@ class Postulacion(BaseModel):
     id_estudiante: int
     id_convocatoria: int
     fecha_postulacion: datetime
-    estado: str
+    escala: str = "Pendiente"
     observaciones: Optional[str] = None
     adjuntos: Optional[str] = None
-    estado: Optional[bool] = True 
+    estado: bool = True

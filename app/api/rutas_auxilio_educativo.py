@@ -25,7 +25,7 @@ def crear_auxilio_educativo(auxilio_educativo: auxilio_educativo):
 
     return {"mensaje": "Registro creado exitosamente", "id": nuevo_id}
 
-@router.put("/{id_beca}")
+@router.put("/{id_auxilio_educativo}")
 def actualizar_auxilio_educativo(id_auxilio_educativo: int, auxilio_educativo: auxilio_educativo):
     exito = repo.actualizar(id_auxilio_educativo, auxilio_educativo)
 

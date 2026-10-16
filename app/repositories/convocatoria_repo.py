@@ -55,20 +55,18 @@ class ConvocatoriaRepository:
             query = """
                 INSERT INTO convocatoria (
                     id_auxilio,
-                    id_periodo,
                     nombre,
                     fecha_inicio,
                     fecha_fin,
                     cupos,
                     estado
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id_convocatoria;
             """
 
             cursor.execute(query, (
                 convocatoria.id_auxilio,
-                convocatoria.id_periodo,
                 convocatoria.nombre,
                 convocatoria.fecha_inicio,
                 convocatoria.fecha_fin,
@@ -120,7 +118,6 @@ class ConvocatoriaRepository:
                 UPDATE convocatoria
                 SET
                     id_auxilio = %s,
-                    id_periodo = %s,
                     nombre = %s,
                     fecha_inicio = %s,
                     fecha_fin = %s,
@@ -132,7 +129,6 @@ class ConvocatoriaRepository:
 
             cursor.execute(query, (
                 convocatoria.id_auxilio,
-                convocatoria.id_periodo,
                 convocatoria.nombre,
                 convocatoria.fecha_inicio,
                 convocatoria.fecha_fin,
