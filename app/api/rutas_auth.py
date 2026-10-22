@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException
 
 from app.repositories.repositorio_auth import RepositorioAuth
-from models.LoginRequest import LoginRequest 
+from app.models.LoginRequest import LoginRequest 
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 

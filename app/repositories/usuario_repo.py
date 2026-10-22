@@ -64,11 +64,12 @@ class UsuarioRepository:
             cursor.execute(
                 query,
                 (
-                    usuario.codigo_usuario,
-                    usuario.nombre,
-                    usuario.cedula,
-                    usuario.id_rol,
-                    usuario.estado
+                      usuario.codigo_usuario,
+                      usuario.nombre,
+                      usuario.cedula,
+                      usuario.id_rol,
+                      usuario.estado,
+                      usuario.clave
                 )
             )
 
