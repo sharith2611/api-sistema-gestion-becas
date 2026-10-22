@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, HTTPException
 
 from app.models.postulacion import Postulacion
@@ -14,7 +15,15 @@ repo = PostulacionRepository()
 
 @router.get("/")
 def listar_postulaciones():
-    return repo.obtener_todos()
+    registros = repo.obtenertodos_estudiantes()
+
+    if registros is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Error al consultar las postulaciones"
+        )
+
+    return registros
 
 
 @router.get("/{id_postulacion}")
@@ -34,6 +43,12 @@ def obtener_postulacion(id_postulacion: int):
 def crear_postulacion(postulacion: Postulacion):
     nuevo_id = repo.crear(postulacion)
 
+    if nuevo_id is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Error al crear la postulación"
+        )
+
     return {
         "mensaje": "Postulación creada exitosamente",
         "id": nuevo_id
@@ -50,6 +65,12 @@ def actualizar_postulacion(
         postulacion
     )
 
+    if exito is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Error al actualizar la postulación"
+        )
+
     if not exito:
         raise HTTPException(
             status_code=404,
@@ -64,6 +85,12 @@ def actualizar_postulacion(
 @router.delete("/{id_postulacion}")
 def eliminar_postulacion(id_postulacion: int):
     exito = repo.eliminar(id_postulacion)
+
+    if exito is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Error al eliminar la postulación"
+        )
 
     if not exito:
         raise HTTPException(

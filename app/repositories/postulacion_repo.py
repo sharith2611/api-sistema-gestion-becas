@@ -1,88 +1,170 @@
+
 from app.core.database import Database
 from app.models.postulacion import Postulacion
 from fastapi import APIRouter, HTTPException
 
 
-
-
 class PostulacionRepository:
     def __init__(self):
-        # Composicion: el repositorio instancia su propia conexion
+        # Composición: el repositorio instancia su propia conexión
         self.db = Database()
 
     def obtener_todos(self):
         try:
             conn = self.db.get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM postulacion ORDER BY id_postulacion ASC;")
+
+            cursor.execute("""
+                SELECT *
+                FROM postulacion
+                ORDER BY id_postulacion ASC;
+            """)
+
             registros = cursor.fetchall()
+            cursor.close()
             conn.close()
+
             return registros
+
         except Exception as e:
-                    print(f"Error de conexión a la BD: {e}")
-                    return None
+            print(f"Error de conexión a la BD: {e}")
+            return None
+
+    def obtenertodos_estudiantes(self):
+        try:
+            conn = self.db.get_connection()
+            cursor = conn.cursor()
+
+            query = """
+                SELECT
+                    p.id_postulacion,
+                    p.id_estudiante,
+                    e.nombres,
+                    e.apellidos,
+                    p.id_convocatoria,
+                    p.fecha_postulacion,
+                    p.observaciones,
+                    p.adjuntos,
+                    p.estado,
+                    p.escala
+                FROM postulacion p
+                INNER JOIN estudiante e
+                    ON p.id_estudiante = e.id_estudiante
+                ORDER BY p.id_postulacion ASC;
+            """
+
+            cursor.execute(query)
+            registros = cursor.fetchall()
+
+            cursor.close()
+            conn.close()
+
+            return registros
+
+        except Exception as e:
+            print(f"Error al consultar las postulaciones con estudiantes: {e}")
+            return None
 
     def obtener_por_id(self, id_postulacion: int):
         try:
             conn = self.db.get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM postulacion WHERE id_postulacion = %s;", (id_postulacion,))
+
+            cursor.execute(
+                "SELECT * FROM postulacion WHERE id_postulacion = %s;",
+                (id_postulacion,)
+            )
+
             registro = cursor.fetchone()
+
+            cursor.close()
             conn.close()
+
             return registro
+
         except Exception as e:
-                    print(f"Error de conexión a la BD: {e}")
-                    return None
+            print(f"Error de conexión a la BD: {e}")
+            return None
 
     def crear(self, postulacion: Postulacion):
         try:
             conn = self.db.get_connection()
             cursor = conn.cursor()
+
             query = """
-                INSERT INTO postulacion ( id_estudiante, id_convocatoria, fecha_postulacion, observaciones,estado)
-                VALUES ( %s, %s, %s, %s,%s) RETURNING id_postulacion;
+                INSERT INTO postulacion (
+                    id_estudiante,
+                    id_convocatoria,
+                    fecha_postulacion,
+                    observaciones,
+                    estado
+                )
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id_postulacion;
             """
-            cursor.execute(query, ( postulacion.id_estudiante,postulacion.id_convocatoria, postulacion.fecha_postulacion, postulacion.observaciones,postulacion.estado, ))
+
+            cursor.execute(query, (
+                postulacion.id_estudiante,
+                postulacion.id_convocatoria,
+                postulacion.fecha_postulacion,
+                postulacion.observaciones,
+                postulacion.estado
+            ))
+
             nuevo_id = cursor.fetchone()['id_postulacion']
+
             conn.commit()
+            cursor.close()
             conn.close()
+
             return nuevo_id
+
         except Exception as e:
-                    print(f"Error de conexión a la BD: {e}")
-                    return None
-                
-                
-                
+            print(f"Error de conexión a la BD: {e}")
+            return None
+
     def eliminar(self, id_postulacion: int):
         try:
             conn = self.db.get_connection()
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM postulacion WHERE id_postulacion = %s RETURNING id_postulacion;", (id_postulacion,))
+
+            cursor.execute(
+                """
+                DELETE FROM postulacion
+                WHERE id_postulacion = %s
+                RETURNING id_postulacion;
+                """,
+                (id_postulacion,)
+            )
+
             eliminado = cursor.fetchone()
+
             conn.commit()
+            cursor.close()
             conn.close()
+
             return eliminado is not None
+
         except Exception as e:
-                    print(f"Error de conexión a la BD: {e}")
-                    return None
-                
-   
+            print(f"Error de conexión a la BD: {e}")
+            return None
+
     def actualizar(self, id_postulacion: int, postulacion: Postulacion):
-        try:  
+        try:
             conn = self.db.get_connection()
             cursor = conn.cursor()
 
             query = """
-            UPDATE postulacion
-            SET id_estudiante = %s,
-                id_convocatoria = %s,
-                fecha_postulacion = %s,
-                estado = %s,
-                observaciones = %s,
-                adjuntos = %s,
-                escala = %s
-            WHERE id_postulacion = %s
-            RETURNING id_postulacion;
+                UPDATE postulacion
+                SET id_estudiante = %s,
+                    id_convocatoria = %s,
+                    fecha_postulacion = %s,
+                    estado = %s,
+                    observaciones = %s,
+                    adjuntos = %s,
+                    escala = %s
+                WHERE id_postulacion = %s
+                RETURNING id_postulacion;
             """
 
             cursor.execute(query, (
@@ -97,7 +179,9 @@ class PostulacionRepository:
             ))
 
             actualizado = cursor.fetchone()
+
             conn.commit()
+            cursor.close()
             conn.close()
 
             return actualizado is not None
