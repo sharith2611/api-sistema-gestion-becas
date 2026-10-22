@@ -14,6 +14,9 @@ from app.api import (
     rutas_modulo_rol,
     rutas_programa_academico,
     rutas_requisito_convocatoria,
+    rutas_documento_postulacion,
+    rutas_auth
+   
   
 )
 
@@ -26,7 +29,7 @@ app = FastAPI(
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://my-app-rlib.onrender.com",
+    "https://my-app-rlib.onrender.com"
 ]
 
 app.add_middleware(
@@ -51,7 +54,8 @@ app.include_router(rutas_modulo_rol.router)
 app.include_router(rutas_institucion.router)
 app.include_router(rutas_programa_academico.router)
 app.include_router(rutas_requisito_convocatoria.router)
-
+app.include_router(rutas_documento_postulacion.router)
+app.include_router(rutas_auth.router)
 
 
 @app.get("/")
