@@ -171,3 +171,55 @@ class EstudianteRepository:
         finally:
             if conn is not None:
                 conn.close()
+
+    def actualizar(self, id_estudiante: int, estudiante: Estudiante):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                UPDATE estudiante
+                SET
+                    id_programa = %s,
+                    documento = %s,
+                    nombres = %s,
+                    apellidos = %s,
+                    email = %s,
+                    telefono = %s,
+                    fecha_ingreso = %s,
+                    estado = %s
+                WHERE id_estudiante = %s;
+            """, (
+                estudiante.id_programa,
+                estudiante.documento,
+                estudiante.nombres,
+                estudiante.apellidos,
+                estudiante.email,
+                estudiante.telefono,
+                estudiante.fecha_ingreso,
+                estudiante.estado,
+                id_estudiante
+            ))
+
+            actualizado = cursor.rowcount > 0
+
+            conn.commit()
+
+            return actualizado
+
+        except Exception as e:
+            if conn is not None:
+                conn.rollback()
+
+            print(f"Error al actualizar estudiante: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()
