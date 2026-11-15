@@ -8,7 +8,7 @@ from datetime import date, datetime
 from html import escape
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, EmailStr
 from openpyxl import Workbook
@@ -44,22 +44,35 @@ def obtener_registros(fecha_inicio=None, fecha_fin=None, escala=None, id_convoca
 
 def crear_pdf(registros):
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4),
-                            rightMargin=25, leftMargin=25, topMargin=40, bottomMargin=40)
+    doc = SimpleDocTemplate(
+        buffer, pagesize=landscape(A4),
+        rightMargin=25, leftMargin=25, topMargin=40, bottomMargin=40
+    )
     estilos = getSampleStyleSheet()
-    titulo = ParagraphStyle('TituloReporte', parent=estilos['Title'],
-                            textColor=colors.HexColor('#174A91'), fontSize=17, spaceAfter=8)
+    titulo = ParagraphStyle(
+        'TituloReporte', parent=estilos['Title'],
+        textColor=colors.HexColor('#174A91'), fontSize=17, spaceAfter=8
+    )
     celda = ParagraphStyle('CeldaReporte', parent=estilos['Normal'], fontSize=7, leading=9)
-    encabezado = ParagraphStyle('EncabezadoReporte', parent=celda,
-                                textColor=colors.white, fontName='Helvetica-Bold')
-    contenido = [Paragraph('Sistema de Becas y Ayudas Económicas', titulo),
-                 Paragraph('Reporte de postulaciones', estilos['Heading2']),
-                 Paragraph(f'Generado: {datetime.now():%d/%m/%Y %H:%M} | Registros: {len(registros)}', estilos['Normal']),
-                 Spacer(1, 12)]
+    encabezado = ParagraphStyle(
+        'EncabezadoReporte', parent=celda,
+        textColor=colors.white, fontName='Helvetica-Bold'
+    )
+    contenido = [
+        Paragraph('Sistema de Becas y Ayudas Económicas', titulo),
+        Paragraph('Reporte de postulaciones', estilos['Heading2']),
+        Paragraph(
+            f'Generado: {datetime.now():%d/%m/%Y %H:%M} | Registros: {len(registros)}',
+            estilos['Normal']
+        ),
+        Spacer(1, 12),
+    ]
     filas = [[Paragraph(escape(t), encabezado) for _, t in COLUMNAS]]
     for registro in registros:
-        filas.append([Paragraph(escape(str(registro.get(clave) or '')), celda)
-                      for clave, _ in COLUMNAS])
+        filas.append([
+            Paragraph(escape(str(registro.get(clave) or '')), celda)
+            for clave, _ in COLUMNAS
+        ])
     anchos = [96, 84, 80, 91, 100, 90, 49, 49, 49]
     tabla = LongTable(filas, colWidths=anchos, repeatRows=1, hAlign='LEFT')
     tabla.setStyle(TableStyle([
@@ -99,7 +112,8 @@ def crear_excel(registros):
         celda.alignment = Alignment(wrap_text=True)
     for i, registro in enumerate(registros, start=5):
         for j, (clave, _) in enumerate(COLUMNAS, start=1):
-            celda = ws.cell(i, j, registro.get(clave) or '')
+            valor = registro.get(clave)
+            celda = ws.cell(i, j, valor if valor is not None else '')
             celda.alignment = Alignment(vertical='top', wrap_text=True)
             if i % 2 == 0:
                 celda.fill = PatternFill('solid', fgColor='EFF4FA')
@@ -127,17 +141,21 @@ def vista_previa(fecha_inicio: date | None = None, fecha_fin: date | None = None
 def descargar_pdf(fecha_inicio: date | None = None, fecha_fin: date | None = None,
                   escala: str | None = None, id_convocatoria: int | None = None):
     data = crear_pdf(obtener_registros(fecha_inicio, fecha_fin, escala, id_convocatoria))
-    return StreamingResponse(io.BytesIO(data), media_type='application/pdf',
-        headers={'Content-Disposition': 'attachment; filename="reporte_becas.pdf"'})
+    return StreamingResponse(
+        io.BytesIO(data), media_type='application/pdf',
+        headers={'Content-Disposition': 'attachment; filename="reporte_becas.pdf"'}
+    )
 
 
 @router.get('/excel/')
 def descargar_excel(fecha_inicio: date | None = None, fecha_fin: date | None = None,
                     escala: str | None = None, id_convocatoria: int | None = None):
     data = crear_excel(obtener_registros(fecha_inicio, fecha_fin, escala, id_convocatoria))
-    return StreamingResponse(io.BytesIO(data),
+    return StreamingResponse(
+        io.BytesIO(data),
         media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={'Content-Disposition': 'attachment; filename="reporte_becas.xlsx"'})
+        headers={'Content-Disposition': 'attachment; filename="reporte_becas.xlsx"'}
+    )
 
 
 class EnvioCorreo(BaseModel):
@@ -151,7 +169,7 @@ class EnvioCorreo(BaseModel):
 
 @router.post('/enviar-correo/')
 def enviar_correo(solicitud: EnvioCorreo):
-    """Genera el reporte y lo envía por HTTPS mediante Resend."""
+    """Genera un PDF o Excel y solicita su envío a Resend mediante HTTPS."""
     api_key = os.getenv('RESEND_API_KEY')
     remitente = os.getenv('RESEND_FROM', 'Sistema de Becas <onboarding@resend.dev>')
 
@@ -172,17 +190,13 @@ def enviar_correo(solicitud: EnvioCorreo):
         archivo = crear_excel(registros)
         nombre = 'reporte_becas.xlsx'
 
-    # Resend recibe el contenido de los adjuntos codificado en Base64.
     contenido_base64 = base64.b64encode(archivo).decode('ascii')
     payload = {
         'from': remitente,
         'to': [str(solicitud.destinatario)],
         'subject': 'Reporte de Becas y Ayudas Económicas',
         'text': 'Adjuntamos el reporte solicitado desde el Sistema de Becas y Ayudas Económicas.',
-        'attachments': [{
-            'filename': nombre,
-            'content': contenido_base64,
-        }],
+        'attachments': [{'filename': nombre, 'content': contenido_base64}],
     }
 
     peticion = urllib.request.Request(
@@ -191,6 +205,10 @@ def enviar_correo(solicitud: EnvioCorreo):
         headers={
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            # Evita la identificación predeterminada "Python-urllib/...".
+            # Es una prueba para el bloqueo Cloudflare 1010, no una garantía.
+            'User-Agent': 'SistemaGestionBecas/1.0 (Python; Resend HTTPS Client)',
         },
         method='POST',
     )
@@ -199,17 +217,28 @@ def enviar_correo(solicitud: EnvioCorreo):
         with urllib.request.urlopen(peticion, timeout=20) as respuesta:
             resultado = json.load(respuesta)
     except urllib.error.HTTPError as exc:
-        # Registramos el error en el backend sin exponer los detalles del
-        # proveedor ni las credenciales al navegador.
         detalle = exc.read(1000).decode('utf-8', errors='replace')
         print(f'Error de Resend HTTP {exc.code}: {detalle}')
-        if exc.code in (400, 403, 422):
-            raise HTTPException(502, 'Resend rechazó el envío. Verifica el remitente, el dominio y el destinatario.') from exc
+
+        # Cloudflare 1010 es un bloqueo del cliente HTTP antes de que la API
+        # pueda evaluar normalmente remitente, destinatario o credenciales.
+        if exc.code == 403 and 'error code: 1010' in detalle.lower():
+            raise HTTPException(
+                502,
+                'La protección de red bloqueó la solicitud a Resend (Cloudflare 1010). '
+                'Revisa los logs; puede requerir usar el SDK oficial o contactar al proveedor.'
+            ) from exc
+
         if exc.code == 401:
             raise HTTPException(502, 'Resend rechazó la clave API. Verifica RESEND_API_KEY.') from exc
+        if exc.code in (400, 403, 422):
+            raise HTTPException(
+                502,
+                'Resend rechazó el envío. Revisa los logs para conocer el motivo exacto.'
+            ) from exc
         raise HTTPException(502, 'Error del proveedor de correo al enviar el reporte.') from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        print(f'Error de conexión con Resend: {type(exc).__name__}')
+        print(f'Error de conexión con Resend: {type(exc).__name__}: {exc}')
         raise HTTPException(502, 'No fue posible conectar con el servicio de correo.') from exc
 
     return {
