@@ -239,7 +239,8 @@ class PostulacionRepository:
                     e.nombres || ' ' || e.apellidos AS estudiante,
                     c.nombre AS convocatoria,
                     p.fecha_postulacion AS fecha,
-                    p.estado
+                    p.estado,
+                    p.escala
                 FROM postulacion p
                 INNER JOIN estudiante e
                     ON p.id_estudiante = e.id_estudiante
