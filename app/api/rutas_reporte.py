@@ -1,8 +1,10 @@
+import base64
 import io
+import json
 import os
-import smtplib
+import urllib.error
+import urllib.request
 from datetime import date, datetime
-from email.message import EmailMessage
 from html import escape
 from typing import Literal
 
@@ -149,34 +151,68 @@ class EnvioCorreo(BaseModel):
 
 @router.post('/enviar-correo/')
 def enviar_correo(solicitud: EnvioCorreo):
-    host, usuario, password = (os.getenv('SMTP_HOST'), os.getenv('SMTP_USER'), os.getenv('SMTP_PASSWORD'))
-    remitente = os.getenv('SMTP_FROM') or usuario
-    if not all([host, usuario, password, remitente]):
-        raise HTTPException(503, 'No se ha configurado el servicio de correo SMTP.')
-    registros = obtener_registros(solicitud.fecha_inicio, solicitud.fecha_fin,
-                                 solicitud.escala, solicitud.id_convocatoria)
+    """Genera el reporte y lo envía por HTTPS mediante Resend."""
+    api_key = os.getenv('RESEND_API_KEY')
+    remitente = os.getenv('RESEND_FROM', 'Sistema de Becas <onboarding@resend.dev>')
+
+    if not api_key:
+        raise HTTPException(503, 'No se ha configurado RESEND_API_KEY.')
+
+    registros = obtener_registros(
+        solicitud.fecha_inicio,
+        solicitud.fecha_fin,
+        solicitud.escala,
+        solicitud.id_convocatoria,
+    )
+
     if solicitud.formato == 'pdf':
-        archivo, nombre, tipo, subtipo = crear_pdf(registros), 'reporte_becas.pdf', 'application', 'pdf'
+        archivo = crear_pdf(registros)
+        nombre = 'reporte_becas.pdf'
     else:
-        archivo, nombre, tipo, subtipo = (crear_excel(registros), 'reporte_becas.xlsx', 'application',
-            'vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    mensaje = EmailMessage()
-    mensaje['Subject'] = 'Reporte de Becas y Ayudas Económicas'
-    mensaje['From'] = remitente
-    mensaje['To'] = str(solicitud.destinatario)
-    mensaje.set_content('Adjuntamos el reporte solicitado desde el Sistema de Becas y Ayudas Económicas.')
-    mensaje.add_attachment(archivo, maintype=tipo, subtype=subtipo, filename=nombre)
+        archivo = crear_excel(registros)
+        nombre = 'reporte_becas.xlsx'
+
+    # Resend recibe el contenido de los adjuntos codificado en Base64.
+    contenido_base64 = base64.b64encode(archivo).decode('ascii')
+    payload = {
+        'from': remitente,
+        'to': [str(solicitud.destinatario)],
+        'subject': 'Reporte de Becas y Ayudas Económicas',
+        'text': 'Adjuntamos el reporte solicitado desde el Sistema de Becas y Ayudas Económicas.',
+        'attachments': [{
+            'filename': nombre,
+            'content': contenido_base64,
+        }],
+    }
+
+    peticion = urllib.request.Request(
+        'https://api.resend.com/emails',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+
     try:
-        puerto = int(os.getenv('SMTP_PORT', '587'))
-        if os.getenv('SMTP_SSL', 'false').lower() == 'true':
-            with smtplib.SMTP_SSL(host, puerto, timeout=20) as servidor:
-                servidor.login(usuario, password)
-                servidor.send_message(mensaje)
-        else:
-            with smtplib.SMTP(host, puerto, timeout=20) as servidor:
-                servidor.starttls()
-                servidor.login(usuario, password)
-                servidor.send_message(mensaje)
-    except (smtplib.SMTPException, OSError) as exc:
-        raise HTTPException(502, 'No se pudo enviar el correo. Revisa la configuración SMTP.') from exc
-    return {'mensaje': 'Reporte enviado correctamente'}
+        with urllib.request.urlopen(peticion, timeout=20) as respuesta:
+            resultado = json.load(respuesta)
+    except urllib.error.HTTPError as exc:
+        # Registramos el error en el backend sin exponer los detalles del
+        # proveedor ni las credenciales al navegador.
+        detalle = exc.read(1000).decode('utf-8', errors='replace')
+        print(f'Error de Resend HTTP {exc.code}: {detalle}')
+        if exc.code in (400, 403, 422):
+            raise HTTPException(502, 'Resend rechazó el envío. Verifica el remitente, el dominio y el destinatario.') from exc
+        if exc.code == 401:
+            raise HTTPException(502, 'Resend rechazó la clave API. Verifica RESEND_API_KEY.') from exc
+        raise HTTPException(502, 'Error del proveedor de correo al enviar el reporte.') from exc
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        print(f'Error de conexión con Resend: {type(exc).__name__}')
+        raise HTTPException(502, 'No fue posible conectar con el servicio de correo.') from exc
+
+    return {
+        'mensaje': 'Reporte aceptado por el servicio de correo.',
+        'id_envio': resultado.get('id'),
+    }

@@ -52,7 +52,7 @@ app.include_router(rutas_modulo_rol.router)
 app.include_router(rutas_institucion.router)
 app.include_router(rutas_programa_academico.router)
 app.include_router(rutas_requisito_convocatoria.router)
-
+app.include_router(rutas_reporte.router)
 app.include_router(rutas_reporte.router)
 
 @app.get("/")
