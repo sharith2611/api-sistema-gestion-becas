@@ -368,3 +368,37 @@ class PostulacionRepository:
         finally:
             if conn is not None:
                 conn.close()
+                
+                
+# ============================================================
+# OBTENER POSTULACIONES AGRUPADAS POR ESCALA
+# ============================================================
+    def obtener_postulaciones_por_escala(self):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT
+                    escala,
+                    COUNT(*) AS cantidad
+                FROM postulacion
+                GROUP BY escala
+                ORDER BY cantidad DESC
+            """)
+
+            return cursor.fetchall()
+
+        except Exception as e:
+            print(f"Error al obtener postulaciones por escala: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()

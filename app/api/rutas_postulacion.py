@@ -153,3 +153,8 @@ def obtener_postulaciones_por_auxilio():
 @router.get('/datosTablero/')
 def obtener_datos_tablero():
     return repo.obtener_datos_tablero()
+
+
+@router.get("/postulacionesPorEscala/")
+def obtener_postulaciones_por_escala():
+    return repo.obtener_postulaciones_por_escala()
