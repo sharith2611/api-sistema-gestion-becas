@@ -1,13 +1,4 @@
-"""Endpoints de historial de postulaciones para el estudiante autenticado.
-
-Requiere que el login de tu sistema emita un JWT HS256 con:
-- sub: documento del usuario
-- exp: fecha de expiración
-Y que el cliente envíe Authorization: Bearer <token>.
-
-Si tu login usa cookies o una autenticación diferente, adapta
-obtener_documento_autenticado a ese mecanismo real.
-"""
+"""Historial personal: valida el JWT de /auth/login (sub=id_usuario)."""
 import io
 import os
 
@@ -25,15 +16,15 @@ repo = HistorialPersonalRepository()
 seguridad = HTTPBearer(auto_error=False)
 
 
-def obtener_documento_autenticado(
+def obtener_usuario_autenticado(
     credenciales: HTTPAuthorizationCredentials | None = Depends(seguridad),
-) -> str:
+) -> int:
     if credenciales is None or credenciales.scheme.lower() != 'bearer':
-        raise HTTPException(status_code=401, detail='Debes iniciar sesión para descargar el historial.')
+        raise HTTPException(401, 'Debes iniciar sesión para descargar el historial.')
 
-    secreto = os.getenv('JWT_SECRET')
+    secreto = os.getenv('JWT_SECRET_KEY')
     if not secreto:
-        raise HTTPException(status_code=503, detail='Falta configurar JWT_SECRET en el backend.')
+        raise HTTPException(503, 'Falta configurar JWT_SECRET_KEY en el backend.')
 
     try:
         datos = jwt.decode(
@@ -43,25 +34,28 @@ def obtener_documento_autenticado(
             options={'require': ['sub', 'exp']},
         )
     except InvalidTokenError as exc:
-        raise HTTPException(status_code=401, detail='Sesión inválida o vencida.') from exc
+        raise HTTPException(401, 'Sesión inválida o vencida.') from exc
 
-    documento = datos.get('sub')
-    if not isinstance(documento, str) or not documento.strip():
-        raise HTTPException(status_code=401, detail='La sesión no identifica al estudiante.')
+    try:
+        id_usuario = int(datos['sub'])
+        if id_usuario <= 0:
+            raise ValueError()
+    except (ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(401, 'El token no identifica un usuario válido.') from exc
 
-    return documento.strip()
+    return id_usuario
 
 
-def registros_estudiante(documento: str):
-    registros = repo.consultar_por_documento(documento)
+def registros_estudiante(id_usuario: int):
+    registros = repo.consultar_por_usuario_id(id_usuario)
     if not registros:
-        raise HTTPException(status_code=404, detail='No tienes postulaciones registradas.')
+        raise HTTPException(404, 'No hay postulaciones asociadas a este usuario activo.')
     return registros
 
 
 @router.get('/pdf/')
-def historial_pdf(documento: str = Depends(obtener_documento_autenticado)):
-    registros = registros_estudiante(documento)
+def historial_pdf(id_usuario: int = Depends(obtener_usuario_autenticado)):
+    registros = registros_estudiante(id_usuario)
     archivo = crear_pdf(registros, tipo='postulaciones')
     return StreamingResponse(
         io.BytesIO(archivo),
@@ -71,8 +65,8 @@ def historial_pdf(documento: str = Depends(obtener_documento_autenticado)):
 
 
 @router.get('/excel/')
-def historial_excel(documento: str = Depends(obtener_documento_autenticado)):
-    registros = registros_estudiante(documento)
+def historial_excel(id_usuario: int = Depends(obtener_usuario_autenticado)):
+    registros = registros_estudiante(id_usuario)
     archivo = crear_excel(registros, tipo='postulaciones')
     return StreamingResponse(
         io.BytesIO(archivo),
