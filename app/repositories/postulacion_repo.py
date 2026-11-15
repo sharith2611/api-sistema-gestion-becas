@@ -189,3 +189,109 @@ class PostulacionRepository:
         except Exception as e:
             print(f"Error de conexión a la BD: {e}")
             return None
+# ============================================================
+# OBTENER TOTAL DE POSTULACIONES
+# ============================================================
+    def obtener_total_postulaciones(self):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT COUNT(*) AS total
+                FROM postulacion
+            """)
+
+            registro = cursor.fetchone()
+
+            return registro["total"]
+
+        except Exception as e:
+            print(f"Error al obtener total de postulaciones: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()
+                
+    # ============================================================
+    # OBTENER ÚLTIMAS POSTULACIONES
+    # ============================================================
+    def obtener_ultimas_postulaciones(self):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT
+                    e.nombres || ' ' || e.apellidos AS estudiante,
+                    c.nombre AS convocatoria,
+                    p.fecha_postulacion AS fecha,
+                    p.estado
+                FROM postulacion p
+                INNER JOIN estudiante e
+                    ON p.id_estudiante = e.id_estudiante
+                INNER JOIN convocatoria c
+                    ON p.id_convocatoria = c.id_convocatoria
+                ORDER BY p.fecha_postulacion DESC
+                LIMIT 5
+            """)
+
+            registros = cursor.fetchall()
+
+            return registros
+
+        except Exception as e:
+            print(f"Error al obtener últimas postulaciones: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()
+                
+    # ============================================================
+    # OBTENER POSTULACIONES POR ESTADO
+    # ============================================================
+    def obtener_postulaciones_por_estado(self):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT
+                    estado,
+                    COUNT(*) AS cantidad
+                FROM postulacion
+                GROUP BY estado
+                ORDER BY cantidad DESC
+            """)
+
+            registros = cursor.fetchall()
+
+            return registros
+
+        except Exception as e:
+            print(f"Error al obtener postulaciones por estado: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()

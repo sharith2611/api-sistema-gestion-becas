@@ -51,3 +51,9 @@ def eliminar_convocatoria(id_convocatoria: int):
 
     return {"mensaje": "Registro eliminado correctamente"}
 
+@router.get("/totalConvocatorias/")
+def obtener_total_convocatorias():
+    total = repo.obtener_total_convocatorias()
+    return total
+
+

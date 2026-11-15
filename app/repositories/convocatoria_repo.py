@@ -146,3 +146,34 @@ class ConvocatoriaRepository:
         except Exception as e:
                     print(f"Error de conexión a la BD: {e}")
                     return None
+                
+# ============================================================
+# OBTENER TOTAL DE CONVOCATORIAS
+# ============================================================
+    def obtener_total_convocatorias(self):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT COUNT(*) AS total
+                FROM convocatoria
+            """)
+
+            registro = cursor.fetchone()
+
+            return registro["total"]
+
+        except Exception as e:
+            print(f"Error al obtener total de convocatorias: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()

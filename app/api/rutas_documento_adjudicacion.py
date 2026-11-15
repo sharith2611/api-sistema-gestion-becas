@@ -49,4 +49,3 @@ def eliminar_documento_adjudicacion(id_documento_adjudicacion: int):
         raise HTTPException(status_code=404, detail="Registro no encontrado")
 
     return {"mensaje": "Registro eliminado correctamente"}
-

@@ -223,3 +223,34 @@ class EstudianteRepository:
         finally:
             if conn is not None:
                 conn.close()
+
+    def obtener_total_estudiantes(self):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT COUNT(*) AS total
+                FROM estudiante;
+            """)
+
+            registro = cursor.fetchone()
+
+            if registro is None:
+                return 0
+
+            return registro["total"]
+
+        except Exception as e:
+            print(f"Error al obtener total de estudiantes: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()

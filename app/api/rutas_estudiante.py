@@ -59,11 +59,9 @@ def actualizar_estudiante(
         "mensaje": "Registro actualizado correctamente"
     }
 
-
 @router.get("/documento/{documento}")
 def obtener_estudiante_por_documento(documento: str):
     estudiante = repo.obtener_por_documento(documento)
-
     if not estudiante:
         raise HTTPException(
             status_code=404,
@@ -71,3 +69,14 @@ def obtener_estudiante_por_documento(documento: str):
         )
 
     return estudiante
+
+
+
+@router.get("/totalEstudiantes/")
+def obtener_total_estudiantes():
+    total = repo.obtener_total_estudiantes()
+    return total
+
+
+
+

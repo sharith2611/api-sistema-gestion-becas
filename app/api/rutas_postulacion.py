@@ -26,6 +26,37 @@ def listar_postulaciones():
     return registros
 
 
+# =====================================================
+# CONSULTAS ESPECÍFICAS
+# =====================================================
+
+@router.get("/postulacionesPorEstado/")
+def obtener_postulaciones_por_estado():
+    registros = repo.obtener_postulaciones_por_estado()
+    return registros
+
+
+@router.get("/totalPostulaciones/")
+def obtener_total_postulaciones():
+    total = repo.obtener_total_postulaciones()
+    return total
+
+
+@router.get("/ultimasPostulaciones/")
+def obtener_ultimas_postulaciones():
+    registros = repo.obtener_ultimas_postulaciones()
+    return registros
+
+
+@router.get("/estudiante/{id_estudiante}")
+def obtener_por_estudiante(id_estudiante: int):
+    return repo.obtener_por_estudiante(id_estudiante)
+
+
+# =====================================================
+# CONSULTA POR ID
+# =====================================================
+
 @router.get("/{id_postulacion}")
 def obtener_postulacion(id_postulacion: int):
     registro = repo.obtener_por_id(id_postulacion)
@@ -38,6 +69,10 @@ def obtener_postulacion(id_postulacion: int):
 
     return registro
 
+
+# =====================================================
+# CREAR
+# =====================================================
 
 @router.post("/")
 def crear_postulacion(postulacion: Postulacion):
@@ -54,6 +89,10 @@ def crear_postulacion(postulacion: Postulacion):
         "id": nuevo_id
     }
 
+
+# =====================================================
+# ACTUALIZAR
+# =====================================================
 
 @router.put("/{id_postulacion}")
 def actualizar_postulacion(
@@ -82,6 +121,10 @@ def actualizar_postulacion(
     }
 
 
+# =====================================================
+# ELIMINAR
+# =====================================================
+
 @router.delete("/{id_postulacion}")
 def eliminar_postulacion(id_postulacion: int):
     exito = repo.eliminar(id_postulacion)
@@ -101,13 +144,3 @@ def eliminar_postulacion(id_postulacion: int):
     return {
         "mensaje": "Postulación eliminada correctamente"
     }
-
-
-@router.get("/convocatoria/{id_convocatoria}")
-def obtener_por_convocatoria(id_convocatoria: int):
-    return repo.obtener_por_convocatoria(id_convocatoria)
-
-
-@router.get("/estudiante/{id_estudiante}")
-def obtener_por_estudiante(id_estudiante: int):
-    return repo.obtener_por_estudiante(id_estudiante)

@@ -52,3 +52,10 @@ def eliminar_adjudicacion(id_adjudicacion: int):
 
     return {"mensaje": "Registro eliminado correctamente"}
 
+
+@router.get("/totalAdjudicaciones/")
+def obtener_total_adjudicaciones():
+    total = repo.obtener_total_adjudicaciones()
+    return total
+
+

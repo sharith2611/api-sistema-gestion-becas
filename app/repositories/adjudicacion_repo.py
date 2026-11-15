@@ -163,3 +163,31 @@ class AdjudicacionRepository:
         except Exception as e:
                     print(f"Error de conexión a la BD: {e}")
                     return None
+                
+    def obtener_total_adjudicaciones(self):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT COUNT(*) AS total
+                FROM adjudicacion
+            """)
+
+            registro = cursor.fetchone()
+
+            return registro["total"]
+
+        except Exception as e:
+            print(f"Error al obtener total de adjudicaciones: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()
