@@ -75,53 +75,53 @@ class ReporteRepository:
             conn.close()
 
 
-def obtener_programas(self):
-    conn = self.db.get_connection()
-    if conn is None:
-        raise RuntimeError('No fue posible conectar con la base de datos')
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                SELECT id_programa, nombre
-                FROM public.programa_academico
-                ORDER BY nombre, id_programa
-            ''')
-            return [dict(fila) for fila in cursor.fetchall()]
-    finally:
-        conn.close()
+    def obtener_programas(self):
+        conn = self.db.get_connection()
+        if conn is None:
+            raise RuntimeError('No fue posible conectar con la base de datos')
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute('''
+                    SELECT id_programa, nombre
+                    FROM public.programa_academico
+                    ORDER BY nombre, id_programa
+                ''')
+                return [dict(fila) for fila in cursor.fetchall()]
+        finally:
+            conn.close()
 
-def consultar_estudiantes(self, fecha_inicio=None, fecha_fin=None,
-                          id_programa=None, estado_estudiante=None):
-    conn = self.db.get_connection()
-    if conn is None:
-        raise RuntimeError('No fue posible conectar con la base de datos')
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                SELECT
-                    CONCAT_WS(' ', e.nombres, e.apellidos) AS estudiante,
-                    e.email AS correo,
-                    e.telefono AS telefono,
-                    i.nombre AS institucion,
-                    f.nombre AS facultad,
-                    pa.nombre AS programa,
-                    TO_CHAR(e.fecha_ingreso, 'DD/MM/YYYY') AS fecha,
-                    CASE WHEN e.estado THEN 'Activo' ELSE 'Inactivo' END AS estado_estudiante
-                FROM public.estudiante e
-                JOIN public.programa_academico pa ON pa.id_programa = e.id_programa
-                JOIN public.facultad f ON f.id_facultad = pa.id_facultad
-                JOIN public.institucion i ON i.id_institucion = f.id_institucion
-                WHERE (%s::date IS NULL OR e.fecha_ingreso >= %s::date)
-                  AND (%s::date IS NULL OR e.fecha_ingreso <= %s::date)
-                  AND (%s::integer IS NULL OR e.id_programa = %s::integer)
-                  AND (%s::boolean IS NULL OR e.estado = %s::boolean)
-                ORDER BY e.apellidos, e.nombres
-            ''', (
-                fecha_inicio, fecha_inicio,
-                fecha_fin, fecha_fin,
-                id_programa, id_programa,
-                estado_estudiante, estado_estudiante,
-            ))
-            return [dict(fila) for fila in cursor.fetchall()]
-    finally:
-        conn.close()
+    def consultar_estudiantes(self, fecha_inicio=None, fecha_fin=None,
+                            id_programa=None, estado_estudiante=None):
+        conn = self.db.get_connection()
+        if conn is None:
+            raise RuntimeError('No fue posible conectar con la base de datos')
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute('''
+                    SELECT
+                        CONCAT_WS(' ', e.nombres, e.apellidos) AS estudiante,
+                        e.email AS correo,
+                        e.telefono AS telefono,
+                        i.nombre AS institucion,
+                        f.nombre AS facultad,
+                        pa.nombre AS programa,
+                        TO_CHAR(e.fecha_ingreso, 'DD/MM/YYYY') AS fecha,
+                        CASE WHEN e.estado THEN 'Activo' ELSE 'Inactivo' END AS estado_estudiante
+                    FROM public.estudiante e
+                    JOIN public.programa_academico pa ON pa.id_programa = e.id_programa
+                    JOIN public.facultad f ON f.id_facultad = pa.id_facultad
+                    JOIN public.institucion i ON i.id_institucion = f.id_institucion
+                    WHERE (%s::date IS NULL OR e.fecha_ingreso >= %s::date)
+                    AND (%s::date IS NULL OR e.fecha_ingreso <= %s::date)
+                    AND (%s::integer IS NULL OR e.id_programa = %s::integer)
+                    AND (%s::boolean IS NULL OR e.estado = %s::boolean)
+                    ORDER BY e.apellidos, e.nombres
+                ''', (
+                    fecha_inicio, fecha_inicio,
+                    fecha_fin, fecha_fin,
+                    id_programa, id_programa,
+                    estado_estudiante, estado_estudiante,
+                ))
+                return [dict(fila) for fila in cursor.fetchall()]
+        finally:
+            conn.close()
