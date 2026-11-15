@@ -149,3 +149,7 @@ def eliminar_postulacion(id_postulacion: int):
 def obtener_postulaciones_por_auxilio():
     registros = repo.obtener_postulaciones_por_auxilio()
     return registros
+
+@router.get('/datosTablero/')
+def obtener_datos_tablero():
+    return repo.obtener_datos_tablero()
