@@ -14,6 +14,7 @@ from app.api import (
     rutas_modulo_rol,
     rutas_programa_academico,
     rutas_requisito_convocatoria,
+    rutas_reporte
   
 )
 
@@ -52,7 +53,7 @@ app.include_router(rutas_institucion.router)
 app.include_router(rutas_programa_academico.router)
 app.include_router(rutas_requisito_convocatoria.router)
 
-
+app.include_router(rutas_reporte.router)
 
 @app.get("/")
 def estado_api():
