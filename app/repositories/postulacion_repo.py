@@ -295,3 +295,38 @@ class PostulacionRepository:
         finally:
             if conn is not None:
                 conn.close()
+
+    def obtener_postulaciones_por_auxilio(self):
+        conn = None
+
+        try:
+            conn = self.db.get_connection()
+
+            if conn is None:
+                raise Exception("No se pudo conectar con la base de datos.")
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT
+                    a.nombre AS auxilio,
+                    COUNT(p.id_postulacion) AS cantidad
+                FROM auxilio_educativo a
+                INNER JOIN convocatoria c
+                    ON a.id_auxilio = c.id_auxilio
+                INNER JOIN postulacion p
+                    ON c.id_convocatoria = p.id_convocatoria
+                GROUP BY a.id_auxilio, a.nombre
+                ORDER BY cantidad DESC
+            """)
+
+            registros = cursor.fetchall()
+            return registros
+
+        except Exception as e:
+            print(f"Error al obtener postulaciones por auxilio: {e}")
+            raise
+
+        finally:
+            if conn is not None:
+                conn.close()

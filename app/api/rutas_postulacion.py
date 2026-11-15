@@ -144,3 +144,8 @@ def eliminar_postulacion(id_postulacion: int):
     return {
         "mensaje": "Postulación eliminada correctamente"
     }
+    
+@router.get("/postulacionesPorAuxilio/")
+def obtener_postulaciones_por_auxilio():
+    registros = repo.obtener_postulaciones_por_auxilio()
+    return registros
